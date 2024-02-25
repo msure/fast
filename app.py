@@ -1,4 +1,5 @@
 from fastapi import FastAPI, HTTPException
+from pydantic import BaseModel
 import random
 import uuid
 
@@ -22,19 +23,23 @@ corpora = {
     }
 }
 
-@app.get("/random")
-def generate_random_bucket_name(c: str, p: str = None):
-    if c not in ['seinfeld', 'lotr', 'marvel']:
+class Payload(BaseModel):
+    c: str
+    p: str | None = None
+
+@app.post("/random")
+def generate_random_bucket_name(payload: Payload):
+    if payload.c not in ['seinfeld', 'lotr', 'marvel']:
         raise HTTPException(status_code=400, detail="Invalid value for parameter 'c'. Valid values are 'seinfeld', 'lotr', or 'marvel'.")
 
-    corpus = corpora[c]
+    corpus = corpora[payload.c]
     person = random.choice(corpus["person"])
     place = random.choice(corpus["place"])
     thing = random.choice(corpus["thing"])
     unique_id = str(uuid.uuid4()).split('-')[-1]
 
-    if p:
-        bucket_name = f"{p}-{place}-{thing}-{unique_id}"
+    if payload.p:
+        bucket_name = f"{payload.p}-{place}-{thing}-{unique_id}"
     else:
         bucket_name = f"{person}-{place}-{thing}-{unique_id}"
     
